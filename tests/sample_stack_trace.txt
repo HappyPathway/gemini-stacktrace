@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/darnold/git/example-project/app.py", line 20, in main
+    result = process_data(user_input)
+  File "/Users/darnold/git/example-project/processor.py", line 15, in process_data
+    validated_data = validate_input(data)
+  File "/Users/darnold/git/example-project/validator.py", line 8, in validate_input
+    if data["id"] is None:
+TypeError: 'NoneType' object is not subscriptable

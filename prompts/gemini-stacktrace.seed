@@ -1,0 +1,14 @@
+# Project Prompt: gemini-stacktrace
+Pleaes help me create a script that will allow me to paste in a Python stack trace
+and will leverage AI to search through the codebase, compile a collection of relevant code snippets
+to submit to Gemini to help it figure out the plan of action in my codebase to fix.
+needs to output a markdown file so that I can submit to CoPilot and have CoPilot Agent fix the code.
+
+Solution must use:
+- Pydantic-AI
+- Pydantic Models
+- MCP tools that the Gemini Agent can use to help figure out relevant code snippets
+
+Need to research how an agent like this would work.
+
+Please generate full plan and implementation details.

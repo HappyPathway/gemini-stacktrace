@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  gemini-stacktrace:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - .:/workspace
+      - ${HOME}/.config/gemini-stacktrace:/home/vscode/.config/gemini-stacktrace
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PYTHONPATH=/workspace
+    command: sleep infinity
