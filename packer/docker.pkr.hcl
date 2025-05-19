@@ -74,7 +74,7 @@ build {
     
     post-processor "docker-tag" {
       repository = "${var.dockerhub_user}/gemini-stacktrace"
-      tags       = ["${var.image_tag}-${var.timestamp}"]
+      tags       = ["${var.image_tag}-${timestamp()}"]
       only       = ["docker.python"]
     }
     

@@ -62,7 +62,7 @@ jobs:
         -var dockerhub_user=${{ vars.DOCKERHUB_USER }} \
         -var dockerhub_password=${{ secrets.DOCKERHUB_TOKEN }} \
         -var image_tag=${{ env.VERSION }} \
-        -var dockerdocker.pkr.hcl
+        docker.pkr.hcl
 
     - name: Image Build Summary
       run: |
