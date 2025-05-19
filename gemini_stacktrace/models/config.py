@@ -12,7 +12,7 @@ from pydantic import (
     field_validator,
     ConfigDict,
     BeforeValidator,
-    model_serializer,
+    model_validator,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,8 +30,10 @@ AbsolutePath = Annotated[str, BeforeValidator(_ensure_absolute_path)]
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
-    google_api_key: str = Field(
-        description="Google API key for Gemini model access"
+    gemini_api_key: str = Field(
+        default="",
+        description="API key for accessing the Gemini models",
+        env="GEMINI_API_KEY"
     )
     
     model_config = SettingsConfigDict(
@@ -40,6 +42,15 @@ class Settings(BaseSettings):
         env_prefix="",
         extra="ignore"
     )
+    
+    def model_post_init(self, __context):
+        """Validate API key exists."""
+        # Validate that we have an API key
+        if not self.gemini_api_key:
+            raise ValueError(
+                "No API key found. Please set GEMINI_API_KEY environment variable "
+                "or add it to .env file."
+            )
 
 
 class CliArguments(BaseModel):
@@ -64,10 +75,12 @@ class CliArguments(BaseModel):
         description="Path to save the generated markdown file"
     )
     
-    model_name: str = Field(
-        default="gemini-pro",
-        description="Gemini model to use"
+    model_name: Optional[str] = Field(
+        default=None,
+        description="Gemini model to use (None for auto-selection)"
     )
+
+    model_config = ConfigDict(validate_assignment=True)
     
     @field_validator("project_dir")
     def validate_project_dir(cls, v: str) -> str:
@@ -78,14 +91,13 @@ class CliArguments(BaseModel):
         if not path.is_dir():
             raise ValueError(f"Project directory is not a directory: {v}")
         return v
-    
-    @field_validator("stack_trace", "stack_trace_file")
-    def validate_stack_trace_sources(cls, v, info):
+
+    @model_validator(mode='after')
+    def validate_stack_trace_sources(self) -> "CliArguments":
         """Ensure at least one stack trace source is provided."""
-        values = info.data
-        if v is None and values.get("stack_trace") is None and values.get("stack_trace_file") is None:
+        if self.stack_trace is None and self.stack_trace_file is None:
             raise ValueError("Either stack_trace or stack_trace_file must be provided")
-        return v
+        return self
 
 
 class CodebaseContext(BaseModel):

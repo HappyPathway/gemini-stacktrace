@@ -19,12 +19,17 @@ env/
 # Testing
 .pytest_cache/
 .coverage
+htmlcov/
+coverage.xml
+.mypy_cache/
+.ruff_cache/
 
 # IDE specific files
-.vscode/
-.idea/
-*.swp
-*.swo
+.vscode/*
+!.vscode/tasks.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
 # OS specific files
 .DS_Store

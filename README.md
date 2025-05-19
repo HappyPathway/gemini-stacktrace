@@ -19,6 +19,7 @@
 * Git
 * Poetry (recommended: `pip install poetry`)
 * Google Gemini API Key (see [Google AI Studio](https://ai.google.dev/))
+* Docker (optional, for container-based development)
 
 ## Installation
 
@@ -62,9 +63,130 @@ python -m gemini_stacktrace analyze --stack-trace "<paste_your_stack_trace_here>
 gemini-stacktrace analyze --stack-trace-file "/path/to/stack_trace.txt" --project-dir "/path/to/your/codebase" --output-file "remediation_plan.md"
 ```
 
+## Development
+
+### Using Make
+
+The project includes a Makefile to simplify common development tasks:
+
+```bash
+# Display available commands
+make help
+
+# Run all tests
+make test
+
+# Run a specific test file
+make test-single TEST_FILE=tests/test_stack_trace_parser.py
+
+# Run tests with coverage report
+make test-coverage
+
+# Lint the code
+make lint
+
+# Auto-fix linting issues
+make lint-fix
+
+# Format code with ruff
+make format
+
+# Run type checking
+make type-check
+
+# Run all checks (lint, format, type-check, test)
+make all
+
+# Clean up cache directories
+make clean
+
+# Install dependencies with Poetry
+make install
+```
+
+### VS Code Tasks
+
+If you're using Visual Studio Code, all make commands are available as tasks. Press `Ctrl+Shift+P` and type "Run Task" to see the available options.
+
+### Development Container
+
+We provide a development container setup for consistent development environment:
+
+```bash
+# Open in VS Code with Remote Containers extension
+code --install-extension ms-vscode-remote.remote-containers
+code /path/to/gemini-stacktrace
+# Select "Reopen in Container" when prompted
+```
+
+#### Development Helper Script
+
+For container-based development outside of VS Code, use our helper script:
+
+```bash
+# Start the development container
+./scripts/dev.sh up
+
+# Open a shell in the container
+./scripts/dev.sh shell
+
+# Run tests in the container
+./scripts/dev.sh test
+
+# Run linting in the container
+./scripts/dev.sh lint
+
+# Stop the development container
+./scripts/dev.sh down
+
+# See all available commands
+./scripts/dev.sh help
+```
+
 ## Contributing
 
 Contributions are welcome! Please follow standard Fork and Pull Request workflows. Ensure your code passes linting and testing checks.
+
+## License
+
+## Development Container
+
+This project supports development in a Docker container, which provides a consistent environment with all dependencies pre-installed.
+
+### Using VS Code Dev Container
+
+1. Install the [Remote - Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension in VS Code
+2. Open the project in VS Code
+3. Click on the green button in the bottom-left corner
+4. Select "Reopen in Container"
+
+### Using Docker Compose
+
+The project includes helper scripts for container-based development:
+
+```bash
+# Start the development container
+./scripts/dev.sh up
+
+# Open a shell in the container
+./scripts/dev.sh shell
+
+# Run tests in the container
+./scripts/dev.sh test
+
+# Stop the container
+./scripts/dev.sh down
+```
+
+### VS Code Server Permission Issues
+
+If you encounter VS Code Server permission errors when running the dev container, run:
+
+```bash
+./scripts/fix-vscode-perms.sh
+```
+
+This script fixes permissions for the VS Code Server volume used by the dev container.
 
 ## License
 

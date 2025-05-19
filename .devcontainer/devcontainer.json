@@ -34,11 +34,14 @@
     }
   },
   "forwardPorts": [],
-  "postCreateCommand": "pip install --no-cache-dir poetry && poetry install",
+  "postCreateCommand": "bash -c 'chmod +x ${containerWorkspaceFolder}/scripts/verify-poetry.sh && ${containerWorkspaceFolder}/scripts/verify-poetry.sh && poetry install'",
   "remoteEnv": {
-    "PYTHONPATH": "${containerWorkspaceFolder}"
+    "PYTHONPATH": "${containerWorkspaceFolder}",
+    "PATH": "/home/vscode/.local/bin:${PATH}",
+    "GEMINI_API_KEY": "${localEnv:GEMINI_API_KEY}"
   },
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
-  }
+  },
+  "updateContentCommand": "echo 'export PATH=\"/home/vscode/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH\"' >> ~/.bashrc && echo 'export PATH=\"/home/vscode/.local/bin:$PATH\"' >> ~/.profile"
 }

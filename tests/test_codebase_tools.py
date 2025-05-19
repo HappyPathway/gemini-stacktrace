@@ -9,7 +9,7 @@ import tempfile
 import asyncio
 from pathlib import Path
 
-from pydantic_ai.run import RunContext
+from pydantic_ai import RunContext
 
 from gemini_stacktrace.models.config import CodebaseContext
 from gemini_stacktrace.tools.codebase_tools import register_tools
@@ -98,7 +98,8 @@ class TestCodebaseTools:
         register_tools(mock_agent)
         
         # Get the registered tool function
-                for call in mock_agent.tool.mock_calls:
+        read_file = None
+        for call in mock_agent.tool.mock_calls:
             if call[1][0].__name__ == "read_file":
                 read_file = call[1][0]
                 break

@@ -4,6 +4,7 @@ Command-line interface for gemini-stacktrace.
 
 import sys
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 import asyncio
@@ -65,11 +66,11 @@ def analyze(
         "-o",
         help="Path to save the generated markdown file"
     ),
-    model_name: str = typer.Option(
-        "gemini-pro",
+    model_name: Optional[str] = typer.Option(
+        None,
         "--model-name",
         "-m",
-        help="Gemini model to use"
+        help="Gemini model to use (default: auto-select best available model)"
     ),
     verbose: bool = typer.Option(
         False,
@@ -89,13 +90,16 @@ def analyze(
         # Load environment variables from .env file
         load_dotenv()
         
+        # Use GEMINI_MODEL env var if model_name is not provided
+        effective_model_name = model_name or os.environ.get("GEMINI_MODEL")
+        
         # Validate CLI arguments using Pydantic model
         cli_args = CliArguments(
             stack_trace=stack_trace,
             stack_trace_file=stack_trace_file,
             project_dir=str(project_dir),
             output_file=output_file,
-            model_name=model_name
+            model_name=effective_model_name
         )
         
         # Get the stack trace text from file or string
