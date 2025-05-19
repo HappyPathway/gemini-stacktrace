@@ -1,0 +1,79 @@
+# Project Prompt: mcp-server
+Checkout https://github.com/jlowin/fastmcp and figure out how to 
+create a wrapper around our docker container that can provide a basic mcp server around the tool.
+
+Since we'll be working in VS Code mainly, we want to be able to use #terminalSelection in the prompt
+to capture the stack-trace.
+
+# Project Prompt: mcp-server
+
+## Overview
+Create an MCP (Model Control Protocol) server wrapper around our `gemini-stacktrace` Docker container using [FastMCP](https://github.com/jlowin/fastmcp). This will allow VS Code users to easily analyze stack traces by selecting them in the terminal and using Copilot Chat without having to manually run Docker commands.
+
+## Docker Container Details
+
+### Container Information
+- **Image**: `happypathway/gemini-stacktrace:latest`
+- **Repository**: Docker Hub
+- **Base Image**: Python 3.11 Alpine
+- **Entrypoint**: The gemini-stacktrace CLI tool
+
+### Container Input Methods
+The container accepts stack traces through multiple methods:
+1. **Direct string**: Using `--stack-trace "Traceback (most recent call last): ..."`
+2. **File input**: Using `--stack-trace-file "/workspace/your_trace.txt"`
+3. **Standard input**: In newer versions, piping with `cat trace.txt | docker run -i ...`
+
+### Container Output Methods
+Output can be directed to:
+1. **File**: Using `--output-file "/workspace/remediation_plan.md"` (default)
+2. **Standard output**: In newer versions, using `--stdout` or `--no-file` flags
+
+### Required Configuration
+- **Gemini API Key**: Must be provided via `-e GEMINI_API_KEY="YOUR_KEY"`
+- **Project Directory**: Must be mounted to `/workspace` using `-v $(pwd):/workspace`
+- **Model**: Defaults to `gemini-2.5-flash-preview-04-17`, can be overridden with `-e GEMINI_MODEL="alternative-model"`
+
+## MCP Server Implementation Strategy
+
+1. **FastMCP Integration**:
+   - Create a function that wraps Docker container execution
+   - Accept stack trace input from VS Code terminal selections
+   - Return the remediation plan as structured markdown
+
+2. **Input Processing**:
+   - Parse the terminal selection to extract the stack trace
+   - Determine the current working directory to mount as `/workspace`
+   - Handle environment variables and API key configuration
+
+3. **Container Execution**:
+   - Use the Docker Python SDK or subprocess to run the container
+   - Mount the current directory to give the tool access to code files
+   - Pass the stack trace from terminal selection as input
+   - Capture the container's output
+
+4. **Output Handling**:
+   - Parse the markdown remediation plan from the container output
+   - Format it for proper display in VS Code
+   - Provide options to save the plan to a file or view inline
+
+## Example Docker Container Usage
+
+```bash
+# Basic usage
+docker run -it --rm \
+  -v $(pwd):/workspace \
+  -e GEMINI_API_KEY="YOUR_KEY" \
+  happypathway/gemini-stacktrace analyze \
+  --stack-trace "Traceback (most recent call last): ..." \
+  --project-dir "/workspace" \
+  --output-file "/workspace/remediation_plan.md"
+
+# Using stdin/stdout (newer versions)
+cat error.txt | docker run -i --rm \
+  -v $(pwd):/workspace \
+  -e GEMINI_API_KEY="YOUR_KEY" \
+  happypathway/gemini-stacktrace analyze \
+  --stdin \
+  --project-dir "/workspace" \
+  --no-file
