@@ -16,7 +16,7 @@ variable "dockerhub_password" {
   type    = string
 }
 
-variable "dockerhub_username" {
+variable "dockerhub_user" {
   type    = string
 }
 
@@ -68,19 +68,19 @@ build {
   
   post-processors {
     post-processor "docker-tag" {
-      repository = "${var.dockerhub_username}/gemini-stacktrace"
+      repository = "${var.dockerhub_user}/gemini-stacktrace"
       tags       = [var.image_tag, "latest"]
     }
     
     post-processor "docker-tag" {
-      repository = "${var.dockerhub_username}/gemini-stacktrace"
+      repository = "${var.dockerhub_user}/gemini-stacktrace"
       tags       = ["${var.image_tag}-${var.timestamp}"]
       only       = ["docker.python"]
     }
     
     post-processor "docker-push" {
       login          = true
-      login_username = var.dockerhub_username
+      login_username = var.dockerhub_user
       login_password = var.dockerhub_password
     }
   }
