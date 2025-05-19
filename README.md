@@ -42,6 +42,26 @@ source .venv/bin/activate # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+### Using Docker
+
+You can also run `gemini-stacktrace` using Docker, which doesn't require any local Python setup:
+
+```bash
+# Pull the latest image
+docker pull happypathway/gemini-stacktrace:latest
+
+# Run the tool with Docker
+docker run -it --rm \
+  -v $(pwd):/workspace \
+  -e GEMINI_API_KEY="YOUR_GEMINI_API_KEY" \
+  happypathway/gemini-stacktrace analyze \
+  --stack-trace-file "/workspace/your_stack_trace.txt" \
+  --project-dir "/workspace" \
+  --output-file "/workspace/remediation_plan.md"
+```
+
+This mounts your current directory to `/workspace` inside the container, allowing the tool to access your code and stack trace files.
+
 ## Configuration
 
 Create a `.env` file in the project root:
@@ -198,6 +218,25 @@ Contributions are welcome! Please follow these steps:
 5. Create a Pull Request
 
 Ensure your code passes linting and testing checks before submitting.
+
+## CI/CD and Container Builds
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+- **Testing**: Automated tests run on all PRs and pushes to the main branch.
+- **PyPI Publishing**: When a new release is created, the package is automatically published to PyPI.
+- **Container Builds**: Docker containers are built using Packer and pushed to Docker Hub:
+  - On releases: Tagged with both the release version and `latest`.
+  - On manual dispatch: You can trigger a build with a custom version tag from the GitHub Actions tab.
+
+The container build process:
+1. Uses Hashicorp Packer to create a standardized build process
+2. Builds from the `python:3.11-slim` base image
+3. Installs only the necessary dependencies
+4. Configures the application as the entrypoint
+5. Pushes to Docker Hub with appropriate versioning tags
+
+The GitHub Actions workflow file is located at `.github/workflows/packer-build.yml` and the Packer configuration at `packer/docker.pkr.hcl`.
 
 ## License
 

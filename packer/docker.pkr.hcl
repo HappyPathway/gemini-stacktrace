@@ -7,10 +7,19 @@ packer {
   }
 }
 
-variable "version" {
+variable "image_tag" {
   type    = string
   default = "latest"
 }
+
+variable "dockerhub_password" {
+  type    = string
+}
+
+variable "dockerhub_username" {
+  type    = string
+}
+
 
 variable "docker_repo" {
   type    = string
@@ -44,13 +53,14 @@ build {
   }
   
   provisioner "file" {
-    source      = "."
+    source      = "../"
     destination = "/app"
   }
   
   provisioner "shell" {
     inline = [
       "cd /app",
+      "pip install --no-cache-dir -r requirements.txt",
       "pip install --no-cache-dir -e .",
       "rm -rf .git .github .devcontainer tests examples docs"
     ]
@@ -58,14 +68,20 @@ build {
   
   post-processors {
     post-processor "docker-tag" {
-      repository = var.docker_repo
-      tags       = [var.version]
+      repository = "${var.dockerhub_username}/gemini-stacktrace"
+      tags       = [var.image_tag, "latest"]
+    }
+    
+    post-processor "docker-tag" {
+      repository = "${var.dockerhub_username}/gemini-stacktrace"
+      tags       = ["${var.image_tag}-${var.timestamp}"]
+      only       = ["docker.python"]
     }
     
     post-processor "docker-push" {
       login          = true
-      login_username = "{{env `DOCKER_USERNAME`}}"
-      login_password = "{{env `DOCKER_PASSWORD`}}"
+      login_username = var.dockerhub_username
+      login_password = var.dockerhub_password
     }
   }
 }

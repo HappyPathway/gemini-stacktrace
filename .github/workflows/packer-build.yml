@@ -1,0 +1,71 @@
+name: Packer Build and Push
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'packer/**'
+      - 'Dockerfile'
+      - '.github/workflows/packer-build.yml'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag for the image'
+        required: false
+        default: 'latest'
+
+jobs:
+  packer-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Packer
+      uses: hashicorp/setup-packer@main
+      with:
+        version: '1.9.4' # Use the latest stable version or specify the version you need
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ vars.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Set version
+      id: set_version
+      run: |
+        if [ "${{ github.event_name }}" = "release" ]; then
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        elif [ "${{ github.event.inputs.version }}" != "" ] && [ "${{ github.event.inputs.version }}" != "latest" ]; then
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+        else
+          echo "VERSION=latest" >> $GITHUB_ENV
+        fi
+        echo "TIMESTAMP=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
+
+    - name: Initialize Packer
+      working-directory: ./packer
+      run: packer init .
+
+    - name: Validate Packer Template
+      working-directory: ./packer
+      run: packer validate .
+
+    - name: Build Docker Image with Packer
+      working-directory: ./packer
+      run: |
+        packer build \
+        -var dockerhub_user=${{ vars.DOCKERHUB_USER }} \
+        -var dockerhub_password=${{ secrets.DOCKERHUB_TOKEN }} \
+        -var image_tag=${{ env.VERSION }} \
+        -var dockerdocker.pkr.hcl
+
+    - name: Image Build Summary
+      run: |
+        echo "✅ Container image build complete"
+        echo "Repository: ${{ vars.DOCKERHUB_USER }}/gemini-stacktrace"
+        echo "Tags: ${{ env.VERSION }}, latest"
