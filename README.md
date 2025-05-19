@@ -44,7 +44,9 @@ pip install -r requirements.txt
 
 ### Using Docker
 
-You can also run `gemini-stacktrace` using Docker, which doesn't require any local Python setup:
+You can also run `gemini-stacktrace` using Docker, which doesn't require any local Python setup. The container is available on Docker Hub and provides a portable, dependency-free way to use the tool across different operating systems.
+
+#### Basic Usage
 
 ```bash
 # Pull the latest image
@@ -61,6 +63,61 @@ docker run -it --rm \
 ```
 
 This mounts your current directory to `/workspace` inside the container, allowing the tool to access your code and stack trace files.
+
+#### Additional Docker Usage Examples
+
+**Using a direct stack trace instead of a file:**
+
+```bash
+docker run -it --rm \
+  -v $(pwd):/workspace \
+  -e GEMINI_API_KEY="YOUR_GEMINI_API_KEY" \
+  happypathway/gemini-stacktrace analyze \
+  --stack-trace "Traceback (most recent call last): ..." \
+  --project-dir "/workspace" \
+  --output-file "/workspace/remediation_plan.md"
+```
+
+**Reading from standard input (pipe a file to the container):**
+
+```bash
+cat my_trace.txt | docker run -i --rm \
+  -v $(pwd):/workspace \
+  -e GEMINI_API_KEY="YOUR_GEMINI_API_KEY" \
+  happypathway/gemini-stacktrace analyze \
+  --stdin \
+  --project-dir "/workspace" \
+  --output-file "/workspace/remediation_plan.md"
+```
+
+**Specifying a different Gemini model:**
+
+```bash
+docker run -it --rm \
+  -v $(pwd):/workspace \
+  -e GEMINI_API_KEY="YOUR_GEMINI_API_KEY" \
+  -e GEMINI_MODEL="gemini-2.5-flash-preview-04-17" \
+  happypathway/gemini-stacktrace analyze \
+  --stack-trace-file "/workspace/my_trace.txt" \
+  --project-dir "/workspace" \
+  --output-file "/workspace/remediation_plan.md"
+```
+
+#### Creating a Shell Alias for Easier Use
+
+Add this to your shell configuration file (like `~/.zshrc`):
+
+```bash
+# Add this to your ~/.zshrc file
+alias gemini-stacktrace='docker run -it --rm -v $(pwd):/workspace -e GEMINI_API_KEY="your-api-key-here" happypathway/gemini-stacktrace:latest'
+```
+
+After sourcing your configuration file or restarting your terminal, you can use it like this:
+
+```bash
+# Using the alias (much simpler!)
+gemini-stacktrace analyze --stack-trace-file "/workspace/my_trace.txt" --project-dir "/workspace" --output-file "/workspace/remediation_plan.md"
+```
 
 ## Configuration
 
@@ -82,6 +139,21 @@ python -m gemini_stacktrace analyze --stack-trace "<paste_your_stack_trace_here>
 
 # With stack trace from a file
 gemini-stacktrace analyze --stack-trace-file "/path/to/stack_trace.txt" --project-dir "/path/to/your/codebase" --output-file "remediation_plan.md"
+
+# Read stack trace from standard input
+gemini-stacktrace analyze --stdin --project-dir "/path/to/your/codebase" --output-file "remediation_plan.md"
+
+# Pipe a stack trace directly to the tool
+cat my_trace.txt | gemini-stacktrace analyze --stdin --project-dir "/path/to/your/codebase" --output-file "remediation_plan.md"
+
+# Print the remediation plan to standard output (in addition to saving to file)
+gemini-stacktrace analyze --stack-trace-file "/path/to/stack_trace.txt" --project-dir "/path/to/your/codebase" --stdout
+
+# Print to standard output only (no file output)
+gemini-stacktrace analyze --stack-trace-file "/path/to/stack_trace.txt" --project-dir "/path/to/your/codebase" --no-file
+
+# Combine stdin input with stdout output (pipe through the tool)
+cat my_trace.txt | gemini-stacktrace analyze --stdin --project-dir "/path/to/your/codebase" --no-file > remediation_plan.md
 ```
 
 ## Development
@@ -235,6 +307,22 @@ The container build process:
 3. Installs only the necessary dependencies
 4. Configures the application as the entrypoint
 5. Pushes to Docker Hub with appropriate versioning tags
+
+### Container Build Details
+
+The Docker container is built using Hashicorp Packer, which provides a clean, repeatable build process:
+
+1. **Base Image**: Uses Python 3.11 slim as the foundation
+2. **Dependencies**: Installs minimal required packages (git, curl, build-essential)
+3. **Configuration**: 
+   - Sets up the working directory as `/app`
+   - Configures `gemini-stacktrace` as the entrypoint
+   - Installs the application and dependencies
+   - Removes development files to keep the image lean
+4. **Tagging**: Tags the image with both version-specific (`x.y.z`) and `latest` tags
+5. **Publishing**: Pushes the image to Docker Hub at `happypathway/gemini-stacktrace`
+
+You can manually trigger a container build from the GitHub Actions tab or it will be automatically built on new releases.
 
 The GitHub Actions workflow file is located at `.github/workflows/packer-build.yml` and the Packer configuration at `packer/docker.pkr.hcl`.
 

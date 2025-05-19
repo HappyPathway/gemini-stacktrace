@@ -54,6 +54,12 @@ def analyze(
         "-f",
         help="Path to a file containing the Python stack trace"
     ),
+    stdin: bool = typer.Option(
+        False,
+        "--stdin",
+        "-i",
+        help="Read the stack trace from standard input"
+    ),
     project_dir: Path = typer.Option(
         ...,
         "--project-dir",
@@ -65,6 +71,16 @@ def analyze(
         "--output-file",
         "-o",
         help="Path to save the generated markdown file"
+    ),
+    stdout: bool = typer.Option(
+        False,
+        "--stdout",
+        help="Print the remediation plan to standard output"
+    ),
+    no_file: bool = typer.Option(
+        False,
+        "--no-file",
+        help="Don't write the remediation plan to a file (implies --stdout)"
     ),
     model_name: Optional[str] = typer.Option(
         None,
@@ -93,17 +109,38 @@ def analyze(
         # Use GEMINI_MODEL env var if model_name is not provided
         effective_model_name = model_name or os.environ.get("GEMINI_MODEL")
         
+        # If no_file is True, force stdout to be True as well
+        if no_file:
+            stdout = True
+        
         # Validate CLI arguments using Pydantic model
         cli_args = CliArguments(
             stack_trace=stack_trace,
             stack_trace_file=stack_trace_file,
+            stdin=stdin,
             project_dir=str(project_dir),
             output_file=output_file,
+            stdout=stdout,
+            no_file=no_file,
             model_name=effective_model_name
         )
         
-        # Get the stack trace text from file or string
-        if stack_trace_file:
+        # Get the stack trace text from stdin, file, or string
+        if cli_args.stdin:
+            # Read from stdin
+            if sys.stdin.isatty():
+                # If stdin is a terminal, prompt the user
+                console.print("[bold]Enter your stack trace below. Press Ctrl+D (Unix) or Ctrl+Z (Windows) when done:[/bold]")
+            
+            stack_trace_text = sys.stdin.read().strip()
+            
+            # Check if we got any input
+            if not stack_trace_text:
+                console.print("[bold red]Error:[/bold red] No stack trace provided from standard input.")
+                raise typer.Exit(1)
+            
+            console.print("Stack trace loaded from standard input")
+        elif stack_trace_file:
             stack_trace_text = load_stack_trace_from_file_or_string(stack_trace_file)
             console.print(f"Stack trace loaded from file: [bold]{stack_trace_file}[/bold]")
         else:
@@ -145,13 +182,25 @@ def analyze(
             agent.analyze_stack_trace(parsed_stack_trace, codebase_context)
         )
         
-        # Write the remediation plan to file
-        output_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write(remediation_plan)
+        # Handle output based on flags
+        if not cli_args.no_file:
+            # Write the remediation plan to file
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_file, "w", encoding="utf-8") as f:
+                f.write(remediation_plan)
+            console.print(f"\n[bold green]Remediation plan generated and saved to:[/bold green] {output_file}")
         
-        console.print(f"\n[bold green]Remediation plan generated and saved to:[/bold green] {output_file}")
-        console.print("You can now use this plan with GitHub Copilot Agent to fix the issue.")
+        # Print to standard output if requested
+        if cli_args.stdout:
+            if not cli_args.no_file:
+                console.print("\n[bold blue]Remediation Plan:[/bold blue]")
+                console.print("=" * 80)
+            print(remediation_plan)
+            if not cli_args.no_file:
+                console.print("=" * 80)
+        
+        if not cli_args.stdout:
+            console.print("You can now use this plan with GitHub Copilot Agent to fix the issue.")
     
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
