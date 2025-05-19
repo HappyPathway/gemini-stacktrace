@@ -53,7 +53,11 @@ jobs:
 
     - name: Validate Packer Template
       working-directory: ./packer
-      run: packer validate .
+      run: packer validate \
+        -var dockerhub_user=${{ vars.DOCKERHUB_USER }} \
+        -var dockerhub_password=${{ secrets.DOCKERHUB_TOKEN }} \
+        -var image_tag=${{ env.VERSION }} \
+        docker.pkr.hcl
 
     - name: Build Docker Image with Packer
       working-directory: ./packer
