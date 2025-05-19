@@ -47,7 +47,8 @@ pip install -r requirements.txt
 Create a `.env` file in the project root:
 
 ```
-GOOGLE_API_KEY="YOUR_GEMINI_API_KEY"
+GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+GEMINI_MODEL=gemini-2.5-flash-preview-04-17
 ```
 
 ## Usage
@@ -110,18 +111,20 @@ If you're using Visual Studio Code, all make commands are available as tasks. Pr
 
 ### Development Container
 
-We provide a development container setup for consistent development environment:
+The project includes a Docker development container that provides a consistent environment with all dependencies pre-installed. You can use it either through VS Code or with Docker Compose directly.
 
-```bash
-# Open in VS Code with Remote Containers extension
-code --install-extension ms-vscode-remote.remote-containers
-code /path/to/gemini-stacktrace
-# Select "Reopen in Container" when prompted
-```
+#### Using VS Code Dev Containers
 
-#### Development Helper Script
+1. Install the [Remote - Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension in VS Code
+2. Open the project in VS Code
+3. Click on the green button in the bottom-left corner
+4. Select "Reopen in Container"
 
-For container-based development outside of VS Code, use our helper script:
+VS Code will build the container and configure everything automatically. All VS Code extensions and settings are pre-configured in the dev container.
+
+#### Using Docker Compose
+
+For development outside VS Code or for CI/CD workflows, use our helper script:
 
 ```bash
 # Start the development container
@@ -143,50 +146,58 @@ For container-based development outside of VS Code, use our helper script:
 ./scripts/dev.sh help
 ```
 
+#### Troubleshooting Dev Container Issues
+
+##### VS Code Server Permissions
+
+If you encounter VS Code Server permission errors when using the dev container (common on Linux hosts), you may see errors like:
+
+- "Failed to create directory in VS Code Server"
+- "EACCES: permission denied" errors in the VS Code logs
+- Extensions failing to install or load
+
+To fix these issues:
+
+1. Stop the dev container if it's running:
+   ```bash
+   ./scripts/dev.sh down
+   ```
+
+2. Run the permission fix script:
+   ```bash
+   ./scripts/fix-vscode-perms.sh
+   ```
+
+3. Start the dev container again:
+   ```bash
+   ./scripts/dev.sh up
+   ```
+
+This script ensures proper ownership and permissions for the VS Code Server volume used by the dev container.
+
+##### Other Common Issues
+
+- If the container fails to build, try removing the existing container and volumes:
+  ```bash
+  docker-compose -f docker-compose.dev.yml down -v
+  ```
+
+- If Python packages aren't being found, make sure you're in the Poetry shell:
+  ```bash
+  poetry shell
+  ```
+
 ## Contributing
 
-Contributions are welcome! Please follow standard Fork and Pull Request workflows. Ensure your code passes linting and testing checks.
+Contributions are welcome! Please follow these steps:
 
-## License
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run all checks: `make all`
+5. Create a Pull Request
 
-## Development Container
-
-This project supports development in a Docker container, which provides a consistent environment with all dependencies pre-installed.
-
-### Using VS Code Dev Container
-
-1. Install the [Remote - Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension in VS Code
-2. Open the project in VS Code
-3. Click on the green button in the bottom-left corner
-4. Select "Reopen in Container"
-
-### Using Docker Compose
-
-The project includes helper scripts for container-based development:
-
-```bash
-# Start the development container
-./scripts/dev.sh up
-
-# Open a shell in the container
-./scripts/dev.sh shell
-
-# Run tests in the container
-./scripts/dev.sh test
-
-# Stop the container
-./scripts/dev.sh down
-```
-
-### VS Code Server Permission Issues
-
-If you encounter VS Code Server permission errors when running the dev container, run:
-
-```bash
-./scripts/fix-vscode-perms.sh
-```
-
-This script fixes permissions for the VS Code Server volume used by the dev container.
+Ensure your code passes linting and testing checks before submitting.
 
 ## License
 
