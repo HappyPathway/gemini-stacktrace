@@ -1,0 +1,22 @@
+2025-05-19 14:43:52,727 - INFO - Output directory set to: /Users/darnold/git/gemini-stacktrace/prompts
+2025-05-19 14:43:52,730 - INFO - Trying requested model: gemini-1.5-pro
+2025-05-19 14:43:55,539 - INFO - Successfully using requested model: gemini-1.5-pro
+2025-05-19 14:43:55,539 - INFO - Gemini API configured and connection successful.
+2025-05-19 14:43:55,539 - INFO - Trying requested model: gemini-1.5-pro
+2025-05-19 14:43:58,433 - INFO - Successfully using requested model: gemini-1.5-pro
+2025-05-19 14:43:58,433 - INFO - Gemini API configured and connection successful.
+2025-05-19 14:43:58,434 - INFO - Base token configurations for ProjectPrompt: {'temperature': 0.2, 'top_p': 0.95, 'top_k': 40, 'max_output_tokens': 32768, 'candidate_count': 1}
+2025-05-19 14:43:58,436 - INFO - Starting content generation process within ProjectPrompt...
+2025-05-19 14:43:58,436 - INFO - Generating main content for project 'auto-fix'...
+2025-05-19 14:43:58,437 - INFO - Trying requested model: gemini-2.5-pro-preview-05-06
+2025-05-19 14:44:08,355 - INFO - Successfully using requested model: gemini-2.5-pro-preview-05-06
+2025-05-19 14:44:08,356 - INFO - Creating agent with model: gemini-2.5-pro-preview-05-06
+2025-05-19 14:44:08,492 - INFO - Found model details for gemini-2.5-pro-preview-05-06
+2025-05-19 14:44:08,492 - INFO - Model limits: output_tokens=65536, max_temp=2.0, top_p=0.95, top_k=64
+2025-05-19 14:44:08,493 - WARNING - max_output_tokens 32768 exceeds model limit 16384, adjusting.
+2025-05-19 14:44:08,493 - INFO - Search grounding is enabled; relying on model/pydantic-ai for its application.
+2025-05-19 14:44:08,493 - INFO - Creating pydantic-ai agent with model: gemini-2.5-pro-preview-05-06, system prompt length: 553
+2025-05-19 14:44:08,528 - INFO - Running main content agent for 'auto-fix'...
+2025-05-19 14:45:20,463 - INFO - Writing main markdown output file...
+2025-05-19 14:45:20,464 - INFO - Successfully wrote 13.8 KB to /Users/darnold/git/gemini-stacktrace/prompts/auto-fix.md
+2025-05-19 14:45:20,464 - INFO - Content generation and file writing completed successfully.

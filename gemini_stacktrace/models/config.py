@@ -66,11 +66,6 @@ class CliArguments(BaseModel):
         description="Path to a file containing the Python stack trace"
     )
     
-    stdin: bool = Field(
-        default=False,
-        description="Read the stack trace from standard input"
-    )
-    
     project_dir: AbsolutePath = Field(
         description="Path to the root of the codebase to analyze"
     )
@@ -78,16 +73,6 @@ class CliArguments(BaseModel):
     output_file: Path = Field(
         default=Path("remediation_plan.md"),
         description="Path to save the generated markdown file"
-    )
-    
-    stdout: bool = Field(
-        default=False,
-        description="Print the remediation plan to standard output"
-    )
-    
-    no_file: bool = Field(
-        default=False,
-        description="Don't write the remediation plan to a file (implies stdout)"
     )
     
     model_name: Optional[str] = Field(
@@ -110,19 +95,8 @@ class CliArguments(BaseModel):
     @model_validator(mode='after')
     def validate_stack_trace_sources(self) -> "CliArguments":
         """Ensure at least one stack trace source is provided."""
-        if self.stack_trace is None and self.stack_trace_file is None and not self.stdin:
-            raise ValueError("Either stack_trace, stack_trace_file, or --stdin must be provided")
-        
-        # Ensure we don't have multiple sources specified
-        sources = sum([
-            self.stack_trace is not None, 
-            self.stack_trace_file is not None, 
-            self.stdin
-        ])
-        
-        if sources > 1:
-            raise ValueError("Only one of stack_trace, stack_trace_file, or --stdin can be provided")
-            
+        if self.stack_trace is None and self.stack_trace_file is None:
+            raise ValueError("Either stack_trace or stack_trace_file must be provided")
         return self
 
 

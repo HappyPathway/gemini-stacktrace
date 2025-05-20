@@ -1,0 +1,80 @@
+## Auto-Fix Implementation Extension Plan
+
+1. **Code Modification Tools Integration**
+   - Extend `CodebaseContext` class to include file modification methods:
+     - `write_file(file_path, content)`: Write content to a file with safety checks
+     - `backup_file(file_path)`: Create backup of file before modifications
+     - `restore_backup(file_path)`: Restore file from backup if fix fails
+     - `apply_diff(file_path, diff)`: Apply diff-format changes to a file
+
+2. **Fix Detection Models**
+   - Create Pydantic models to represent code fixes:
+     - `CodeModification`: Represents a single change to a file
+     - `FileFix`: Groups related changes to a single file
+     - `FixPlan`: Collection of all fixes across multiple files
+   - Include validation to ensure fixes are safe and well-formed
+
+3. **LLM Response Parsing**
+   - Enhance response parsing from Gemini to extract structured code fixes
+   - Support multiple formats:
+     - Unified diff format
+     - Before/after code blocks
+     - Line-by-line replacement instructions
+
+4. **Fix Application Engine**
+   - Create a `FixApplicator` class that:
+     - Safely applies changes to files
+     - Handles line number adjustments for multi-part changes
+     - Manages atomic writes and backups
+     - Validates that files remain syntactically valid after changes
+
+5. **Testing Integration**
+   - Add hooks to run tests or linters after applying changes:
+     - Run specific tests affected by the changes
+     - Use isolated environment to verify fixes before committing
+     - Support for popular test frameworks (pytest, unittest)
+
+6. **Version Control Integration**
+   - Add optional integration with Git:
+     - Create branch for fix attempt
+     - Commit changes with descriptive message about the fix
+     - Revert changes if tests fail
+     - Support creating a PR with the fix
+
+7. **Failure Recovery System**
+   - Implement robust failure handling:
+     - File backups before any modifications
+     - Transaction-like approach to multi-file changes
+     - Ability to roll back partially applied fixes
+     - Detailed logging of all actions taken
+
+8. **User Interaction Enhancements**
+   - Create UI components for code review:
+     - Diff viewer for proposed changes
+     - Multi-step approval process for complex fixes
+     - Edit capabilities before applying fixes
+     - Detailed explanation of each change
+
+9. **Fix Quality Assurance**
+   - Add validation steps before changes are applied:
+     - Syntax checking for modified code
+     - Style consistency verification
+     - Control flow analysis to detect potential issues
+     - Ensure imports remain valid
+
+10. **Remediation Report Generation**
+    - Generate comprehensive report after fix attempt:
+      - Summary of changes applied
+      - Before/after code snippets
+      - Test results
+      - Recommendations for further improvements
+
+**Considerations:**
+- Always require user confirmation before applying changes.
+- Use standard diff format for clarity.
+- Ensure changes are idempotent and safe.
+- Start with common error types and expand coverage iteratively.
+
+**Considerations (continued):**
+- Ensure atomicity and safety when modifying files.
+- Provide clear logs and rollback options for all automated changes.
