@@ -72,6 +72,27 @@ def process_numbers(numbers: List[int]) -> Dict[str, int]:
     print("This is a helper function")
 """)
         
+        # Create a directory that should be ignored by default excluded_dirs
+        os.makedirs(project_dir / "docs", exist_ok=True)
+        with open(project_dir / "docs" / "documentation.txt", "w") as f:
+            f.write("Searchable content in a default excluded directory.")
+
+        # Create a file that should be ignored by default excluded_file_patterns
+        with open(project_dir / "system.log", "w") as f:
+            f.write("Searchable log content.")
+            
+        with open(project_dir / "src" / "another.log", "w") as f: # For testing interaction with file_pattern
+            f.write("Searchable log content in src.")
+
+        # Create a directory and a file for testing custom directory exclusion
+        os.makedirs(project_dir / "custom_exclude_dir", exist_ok=True)
+        with open(project_dir / "custom_exclude_dir" / "custom_file.txt", "w") as f:
+            f.write("Searchable content in custom excluded directory.")
+
+        # Create a file for testing custom file pattern exclusion
+        with open(project_dir / "data.custom_pattern", "w") as f:
+            f.write("Searchable content in custom pattern file.")
+        
         yield project_dir
 
 
@@ -269,3 +290,101 @@ class TestCodebaseTools:
         
         # Check that the error line is marked with '>'
         assert "> " in context
+
+    @pytest.mark.asyncio
+    async def test_find_in_files_default_dir_exclusion(self, mock_agent, test_codebase_context, test_project):
+        register_tools(mock_agent)
+        find_in_files = next(call[1][0] for call in mock_agent.tool.mock_calls if call[1][0].__name__ == "find_in_files")
+        ctx = AsyncMock()
+        ctx.deps = test_codebase_context # Uses default CodebaseContext exclusions
+
+        matches = await find_in_files(ctx, "Searchable content in a default excluded directory")
+        assert not any(match["file_path"] == str(Path("docs") / "documentation.txt") for match in matches)
+        # Also check it finds something NOT in an excluded dir to be sure search works generally
+        matches_main = await find_in_files(ctx, "def add")
+        assert any(match["file_path"] == "main.py" for match in matches_main)
+
+    @pytest.mark.asyncio
+    async def test_find_in_files_default_file_pattern_exclusion(self, mock_agent, test_codebase_context, test_project):
+        register_tools(mock_agent)
+        find_in_files = next(call[1][0] for call in mock_agent.tool.mock_calls if call[1][0].__name__ == "find_in_files")
+        ctx = AsyncMock()
+        ctx.deps = test_codebase_context # Uses default CodebaseContext exclusions
+
+        matches = await find_in_files(ctx, "Searchable log content")
+        # Check it's not found in system.log (root) or src/another.log
+        assert not any("system.log" in match["file_path"] for match in matches)
+        assert not any(str(Path("src") / "another.log") in match["file_path"] for match in matches)
+        
+        # Check it finds it if we search specifically with a file_pattern that overrides (e.g. whitelisting)
+        # The current find_in_files logic applies exclusion before _is_binary check, and after whitelist file_pattern
+        # So, excluded_file_patterns should take precedence over the input file_pattern.
+        # Let's confirm: if we search for *.log, it should still be excluded by default excluded_file_patterns.
+        matches_specific_log = await find_in_files(ctx, "Searchable log content", file_pattern="*.log")
+        assert not any("system.log" in match["file_path"] for match in matches_specific_log)
+        assert not any(str(Path("src") / "another.log") in match["file_path"] for match in matches_specific_log)
+
+    @pytest.mark.asyncio
+    async def test_find_in_files_custom_dir_exclusion(self, mock_agent, test_project):
+        register_tools(mock_agent)
+        find_in_files = next(call[1][0] for call in mock_agent.tool.mock_calls if call[1][0].__name__ == "find_in_files")
+        
+        # CodebaseContext with custom exclusion
+        custom_context = CodebaseContext(
+            project_dir=str(test_project),
+            excluded_dirs=["custom_exclude_dir"] # Override defaults by providing a new list
+        )
+        ctx = AsyncMock()
+        ctx.deps = custom_context
+
+        matches = await find_in_files(ctx, "Searchable content in custom excluded directory")
+        assert not any(match["file_path"] == str(Path("custom_exclude_dir") / "custom_file.txt") for match in matches)
+        
+        # Verify it IS found if not excluded
+        # Use a context that doesn't exclude 'custom_exclude_dir' but keeps other defaults to avoid matching everything
+        default_dirs = CodebaseContext().excluded_dirs 
+        custom_dirs_without_custom_exclude = [d for d in default_dirs if d != "custom_exclude_dir"]
+        
+        non_excluding_context = CodebaseContext(project_dir=str(test_project), excluded_dirs=custom_dirs_without_custom_exclude)
+        ctx.deps = non_excluding_context
+        matches_found = await find_in_files(ctx, "Searchable content in custom excluded directory")
+        assert any(match["file_path"] == str(Path("custom_exclude_dir") / "custom_file.txt") for match in matches_found)
+
+    @pytest.mark.asyncio
+    async def test_find_in_files_custom_file_pattern_exclusion(self, mock_agent, test_project):
+        register_tools(mock_agent)
+        find_in_files = next(call[1][0] for call in mock_agent.tool.mock_calls if call[1][0].__name__ == "find_in_files")
+
+        custom_context = CodebaseContext(
+            project_dir=str(test_project),
+            excluded_file_patterns=["*.custom_pattern"] # Override defaults
+        )
+        ctx = AsyncMock()
+        ctx.deps = custom_context
+
+        matches = await find_in_files(ctx, "Searchable content in custom pattern file")
+        assert not any(match["file_path"] == "data.custom_pattern" for match in matches)
+
+        # Verify it IS found if not excluded
+        non_excluding_context = CodebaseContext(project_dir=str(test_project), excluded_file_patterns=[]) # No file pattern exclusions
+        ctx.deps = non_excluding_context
+        matches_found = await find_in_files(ctx, "Searchable content in custom pattern file")
+        assert any(match["file_path"] == "data.custom_pattern" for match in matches_found)
+
+    @pytest.mark.asyncio
+    async def test_find_in_files_whitelist_and_dir_exclusion(self, mock_agent, test_project):
+        register_tools(mock_agent)
+        find_in_files = next(call[1][0] for call in mock_agent.tool.mock_calls if call[1][0].__name__ == "find_in_files")
+
+        # Use default context which excludes "docs"
+        default_context_with_exclusions = CodebaseContext(project_dir=str(test_project))
+        ctx = AsyncMock()
+        ctx.deps = default_context_with_exclusions
+        
+        # Search for *.txt files. documentation.txt is in 'docs' which is excluded by default.
+        matches = await find_in_files(ctx, "Searchable content", file_pattern="*.txt")
+        assert not any(match["file_path"] == str(Path("docs") / "documentation.txt") for match in matches)
+        
+        # Check it finds other .txt files not in excluded dirs (e.g. custom_exclude_dir/custom_file.txt)
+        # custom_exclude_dir is not in the default exclusion list of CodebaseContext
+        assert any(match["file_path"] == str(Path("custom_exclude_dir") / "custom_file.txt") for match in matches)

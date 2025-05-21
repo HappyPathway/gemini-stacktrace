@@ -36,7 +36,9 @@ A `retry_on_error` decorator is applied to these tools to enhance their resilien
     *   `line_content` (str): The content of the line containing the match.
 *   **Implementation Notes:**
     *   Recursively searches directories starting from the project root.
-    *   Skips hidden files and common non-code directories (e.g., `__pycache__`, `venv`, `node_modules`).
+    *   Skips hidden files (starting with '.').
+    *   Skips directories listed in `CodebaseContext.excluded_dirs`. By default, this includes common SCM, IDE, virtual environment, build, and documentation folders (see "Configuring Search Behavior" section for defaults).
+    *   Skips files matching glob patterns in `CodebaseContext.excluded_file_patterns` (e.g., `*.log`, `*.pyc` by default).
     *   Uses a helper function `_is_binary_file` to attempt to skip searching in binary files (based on extension and content sniffing).
     *   Limits the number of returned matches (currently to 100) to avoid excessive output.
     *   Handles `re.error` for invalid regex patterns.
@@ -81,6 +83,24 @@ A `retry_on_error` decorator is applied to these tools to enhance their resilien
 *   **Implementation Notes:**
     *   Reads the specified file and extracts the relevant lines.
     *   Formats the output to include line numbers and highlight the `frame_line_number`.
+
+## Configuring Search Behavior
+
+The behavior of search tools like `find_in_files` and `find_symbol_references` can be customized by providing specific exclusion lists when creating an instance of `CodebaseContext` (typically available as `ctx.deps` within tool execution). These settings allow for more fine-grained control over which parts of the codebase are searched.
+
+The `CodebaseContext` model (in `gemini_stacktrace/models/config.py`) includes the following fields for configuration:
+
+*   `excluded_dirs: List[str]`
+    *   **Description:** A list of directory names that should be completely ignored during searches.
+    *   **Default Values:** `["__pycache__", "venv", ".venv", "node_modules", "dist", "build", ".git", ".hg", ".svn", ".vscode", ".idea", "docs"]`
+    *   **Customization:** When creating a `CodebaseContext` instance, you can provide your own list to this field to override the defaults. An empty list `[]` would mean no directories are excluded by name (though hidden directories starting with `.` are always skipped).
+
+*   `excluded_file_patterns: List[str]`
+    *   **Description:** A list of glob-style file patterns (e.g., `*.log`, `temp_*.*`) for files that should be ignored during searches, even if they are in directories that are otherwise being searched.
+    *   **Default Values:** `["*.pyc", "*.pyo", "*.log"]`
+    *   **Customization:** Provide your own list of patterns to override the defaults. An empty list `[]` would mean no files are excluded based on these patterns (though the `_is_binary_file` check will still apply).
+
+These configurations are used by the search tools to filter out irrelevant files and directories, leading to more focused and efficient search results.
 
 ## Potential Improvements
 

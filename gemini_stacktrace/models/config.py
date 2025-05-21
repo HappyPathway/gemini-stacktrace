@@ -3,7 +3,7 @@ Configuration models for the gemini-stacktrace application.
 """
 
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List # Make sure List is imported
 import os
 
 from pydantic import (
@@ -105,6 +105,20 @@ class CodebaseContext(BaseModel):
     
     project_dir: AbsolutePath = Field(
         description="Absolute path to the project directory"
+    )
+    
+    excluded_dirs: List[str] = Field(
+        default_factory=lambda: [
+            "__pycache__", "venv", ".venv", "node_modules", 
+            "dist", "build", ".git", ".hg", ".svn",
+            ".vscode", ".idea", "docs",
+        ],
+        description="List of directory names to exclude from searches. Default includes common virtual env, SCM, build, and IDE folders."
+    )
+    
+    excluded_file_patterns: List[str] = Field(
+        default_factory=lambda: ["*.pyc", "*.pyo", "*.log"],
+        description="List of glob file patterns to exclude from searches (e.g., '*.log', '*.tmp'). Default includes Python bytecode files and logs."
     )
     
     model_config = ConfigDict(arbitrary_types_allowed=True)
