@@ -153,14 +153,7 @@ def register_tools(agent: Agent[CodebaseContext, str], max_retries: int = 1) -> 
                         continue
 
                     # Skip common directories that shouldn't contain Python code
-                    if os.path.isdir(item_path) and item in {
-                        "__pycache__",
-                        "venv",
-                        ".venv",
-                        "node_modules",
-                        "dist",
-                        "build",
-                    }:
+                    if os.path.isdir(item_path) and item in ctx.deps.excluded_dirs:
                         continue
 
                     if os.path.isdir(item_path):
@@ -169,6 +162,11 @@ def register_tools(agent: Agent[CodebaseContext, str], max_retries: int = 1) -> 
                     elif os.path.isfile(item_path):
                         # If file pattern is specified, filter files
                         if file_pattern and not fnmatch.fnmatch(item, file_pattern):
+                            continue
+
+                        # Skip if file matches any excluded patterns
+                        if ctx.deps.excluded_file_patterns and \
+                           any(fnmatch.fnmatch(item, pattern) for pattern in ctx.deps.excluded_file_patterns):
                             continue
 
                         # Skip if file has been visited
@@ -232,14 +230,7 @@ def register_tools(agent: Agent[CodebaseContext, str], max_retries: int = 1) -> 
                         continue
 
                     # Skip common directories that shouldn't contain Python code
-                    if os.path.isdir(item_path) and item in {
-                        "__pycache__",
-                        "venv",
-                        ".venv",
-                        "node_modules",
-                        "dist",
-                        "build",
-                    }:
+                    if os.path.isdir(item_path) and item in ctx.deps.excluded_dirs:
                         continue
 
                     if os.path.isdir(item_path):
@@ -248,6 +239,11 @@ def register_tools(agent: Agent[CodebaseContext, str], max_retries: int = 1) -> 
                     elif os.path.isfile(item_path):
                         # If file pattern is specified, filter files
                         if file_pattern and not fnmatch.fnmatch(item, file_pattern):
+                            continue
+
+                        # Skip if file matches any excluded patterns
+                        if ctx.deps.excluded_file_patterns and \
+                           any(fnmatch.fnmatch(item, pattern) for pattern in ctx.deps.excluded_file_patterns):
                             continue
 
                         # Skip if file has been visited
